@@ -1392,8 +1392,12 @@ TEST(FormatterTest, FormatCString) {
   EXPECT_EQ("test", format("{0:s}", "test"));
   char nonconst[] = "nonconst";
   EXPECT_EQ("nonconst", format("{0}", nonconst));
+#if 0
   EXPECT_THROW_MSG(format("{0}", static_cast<const char*>(nullptr)),
                    format_error, "string pointer is null");
+#else
+  EXPECT_EQ("(null)", format("{0}", static_cast<const char*>(nullptr)));
+#endif
 }
 
 TEST(FormatterTest, FormatSCharString) {

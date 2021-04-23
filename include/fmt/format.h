@@ -781,6 +781,35 @@ class FMT_API format_error : public std::runtime_error {
 
 namespace detail {
 
+template<typename Char>
+struct null_string_value;
+
+template<>
+struct null_string_value<char> {
+    static const char* value() noexcept { return "(null)"; };
+};
+
+template<>
+struct null_string_value<char8_type> {
+    static const char8_type* value() noexcept { return reinterpret_cast<const char8_type*>(u8"(null)"); };
+};
+
+template<>
+struct null_string_value<char16_t> {
+    static const char16_t* value() noexcept { return u"(null)"; };
+};
+
+template<>
+struct null_string_value<wchar_t> {
+    static const wchar_t* value() noexcept { return L"(null)"; };
+};
+
+template<>
+struct null_string_value<char32_t> {
+    static const char32_t* value() noexcept { return U"(null)"; };
+};
+
+
 template <typename T>
 using is_signed =
     std::integral_constant<bool, std::numeric_limits<T>::is_signed ||
@@ -2067,7 +2096,11 @@ OutputIt write(OutputIt out, Char value) {
 template <typename Char, typename OutputIt>
 OutputIt write(OutputIt out, const Char* value) {
   if (!value) {
+#if 0
     FMT_THROW(format_error("string pointer is null"));
+#else
+    out = write(out, basic_string_view<Char>(null_string_value<Char>::value(), /*length of "(null)"*/6));
+#endif
   } else {
     auto length = std::char_traits<Char>::length(value);
     out = write(out, basic_string_view<Char>(value, length));
@@ -2226,7 +2259,12 @@ class arg_formatter_base {
 
   void write(const Char* value) {
     if (!value) {
+#if 0
       FMT_THROW(format_error("string pointer is null"));
+#else
+      basic_string_view<char_type> sv(null_string_value<char_type>::value(), /*length of "(null)"*/6);
+      specs_ ? write(sv, *specs_) : write(sv);
+#endif
     } else {
       auto length = std::char_traits<char_type>::length(value);
       basic_string_view<char_type> sv(value, length);
